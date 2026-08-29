@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recovery Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0F1D;
+    --surface:#10182B;
+    --surface-raised:#161F38;
+    --line:#232E4A;
+    --mint:#34D399;
+    --mint-dim:#1B4B3D;
+    --rose:#FB7185;
+    --rose-dim:#4A2233;
+    --blue:#60A5FA;
+    --text:#EEF1F8;
+    --text-muted:#8891AB;
+    --text-faint:#5C6584;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:28px 18px;}
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    color:var(--mint);
+    text-transform:uppercase;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{
+    content:'';
+    width:6px; height:6px;
+    background:var(--mint);
+    border-radius:50%;
+    box-shadow:0 0 8px var(--mint);
+  }
+
+  /* HERO */
+  .hero h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    color:var(--text-muted);
+    font-weight:500;
+    margin-bottom:6px;
+  }
+  .hero .amount{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:52px;
+    line-height:1.05;
+    letter-spacing:-0.02em;
+    background:linear-gradient(180deg,#fff, var(--mint) 160%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    margin-bottom:6px;
+  }
+  .hero .sub{
+    color:var(--text-muted);
+    font-size:14px;
+    margin-bottom:22px;
+  }
+  .hero .sub b{color:var(--text); font-weight:600;}
+
+  .leak-bar-label{
+    display:flex; justify-content:space-between;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-faint);
+    margin-bottom:6px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+  .leak-bar{
+    height:34px;
+    border-radius:8px;
+    background:var(--rose-dim);
+    display:flex;
+    overflow:hidden;
+    border:1px solid var(--line);
+    position:relative;
+  }
+  .leak-bar .caught{
+    background:linear-gradient(90deg,#1B4B3D, var(--mint));
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    padding-right:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    font-weight:600;
+    color:#04231A;
+    transition:width 1.2s cubic-bezier(.16,1,.3,1);
+    width:0%;
+  }
+  .leak-bar .lost-label{
+    position:absolute;
+    right:10px; top:50%; transform:translateY(-50%);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--rose);
+  }
+
+  /* CARDS */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 18px;
+    margin-top:16px;
+  }
+  .card h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .card .desc{
+    font-size:12.5px;
+    color:var(--text-muted);
+    margin-bottom:16px;
+    line-height:1.5;
+  }
+
+  /* BAR LIST (by reason) */
+  .reason-row{margin-bottom:14px;}
+  .reason-row:last-child{margin-bottom:0;}
+  .reason-top{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:5px;
+  }
+  .reason-name{
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--text);
+    text-transform:capitalize;
+  }
+  .reason-stats{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .reason-stats .rate{
+    color:var(--text);
+    font-weight:600;
+  }
+  .reason-track{
+    height:8px;
+    background:var(--surface-raised);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .reason-fill{
+    height:100%;
+    border-radius:4px;
+    width:0%;
+    transition:width 1s cubic-bezier(.16,1,.3,1);
+  }
+
+  /* LIFT CHART */
+  .lift-svg-wrap{position:relative;}
+  .lift-callout{
+    position:absolute;
+    background:var(--surface-raised);
+    border:1px solid var(--mint);
+    border-radius:8px;
+    padding:6px 9px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--mint);
+    white-space:nowrap;
+    pointer-events:none;
+  }
+  .lift-legend{
+    display:flex; gap:16px; margin-top:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--text-faint);
+  }
+  .lift-legend span{display:flex; align-items:center; gap:5px;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+
+  /* LEDGER (receipt tape) */
+  .ledger{
+    background:#0D1424;
+    border-radius:10px;
+    border:1px dashed var(--line);
+    padding:14px 4px;
+    max-height:340px;
+    overflow-y:auto;
+  }
+  .ledger-row{
+    display:grid;
+    grid-template-columns:1fr auto auto auto;
+    gap:8px;
+    align-items:center;
+    padding:9px 14px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    border-bottom:1px dotted var(--line);
+  }
+  .ledger-row:last-child{border-bottom:none;}
+  .ledger-reason{
+    color:var(--text);
+    text-transform:capitalize;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .ledger-sub{color:var(--text-faint); font-size:9.5px; display:block; margin-top:1px;}
+  .ledger-amount{color:var(--text-muted); text-align:right;}
+  .ledger-score{text-align:right;}
+  .ledger-outcome{
+    width:18px; height:18px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px;
+    font-weight:700;
+  }
+  .out-yes{background:var(--mint-dim); color:var(--mint);}
+  .out-no{background:var(--rose-dim); color:var(--rose);}
+
+  /* PIPELINE FOOTER */
+  .pipeline{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
+  .step{
+    display:flex;
+    gap:12px;
+    padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .step:last-child{border-bottom:none;}
+  .step-num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--blue);
+    min-width:20px;
+  }
+  .step-text{font-size:12.5px; color:var(--text-muted); line-height:1.5;}
+  .step-text b{color:var(--text); font-weight:600;}
+
+  .footnote{
+    text-align:center;
+    font-size:10.5px;
+    color:var(--text-faint);
+    margin-top:24px;
+    font-family:'JetBrains Mono', monospace;
+  }
+
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Recovery Console — Test Set</div>
+
+  <div class="hero">
+    <h1>Revenue caught before it was lost</h1>
+    <div class="amount" id="heroAmount">₹0</div>
+    <div class="sub" id="heroSub"></div>
+
+    <div class="leak-bar-label">
+      <span>₹0 in failed payments</span>
+      <span id="leakTotalLabel"></span>
+    </div>
+    <div class="leak-bar">
+      <div class="caught" id="caughtBar"></div>
+      <div class="lost-label" id="lostLabel"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Recovery rate by failure reason</h2>
+    <div class="desc">Not all failures are equal — the model learns which ones are worth chasing.</div>
+    <div id="reasonList"></div>
+  </div>
+
+  <div class="card">
+    <h2>Targeting efficiency</h2>
+    <div class="desc">Chasing every failure wastes effort. Ranking by AI score front-loads the recoverable revenue.</div>
+    <div class="lift-svg-wrap">
+      <svg id="liftChart" viewBox="0 0 300 180" style="width:100%; height:auto;"></svg>
+    </div>
+    <div class="lift-legend">
+      <span><span class="dot" style="background:var(--mint)"></span>AI-ranked recovery</span>
+      <span><span class="dot" style="background:var(--text-faint)"></span>Blind retry (random)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Recovery ledger</h2>
+    <div class="desc">Live sample of scored transactions, ranked by recovery probability.</div>
+    <div class="ledger" id="ledger"></div>
+  </div>
+
+  <div class="card">
+    <h2>How it works</h2>
+    <div class="pipeline">
+      <div class="step"><div class="step-num">01</div><div class="step-text"><b>Classify</b> — every failed payment is tagged with a root cause (bank timeout, expired card, insufficient funds…)</div></div>
+      <div class="step"><div class="step-num">02</div><div class="step-text"><b>Score</b> — a model predicts the probability this specific transaction can be recovered</div></div>
+      <div class="step"><div class="step-num">03</div><div class="step-text"><b>Prioritize</b> — recovery effort is spent on the highest-value, highest-probability cases first</div></div>
+      <div class="step"><div class="step-num">04</div><div class="step-text"><b>Act</b> — retry now, retry on the optimal date, or prompt the customer to update their payment method</div></div>
+    </div>
+  </div>
+
+  <div class="footnote">Simulated data · trained on 8,000 failed transactions</div>
+</div>
+
+<script>
+const DATA = {"summary": {"total_failed_txns": 1600, "total_failed_value": 1781829.0, "actual_recovered_txns": 831, "actual_recovered_value": 956967.0, "overall_recovery_rate": 0.5194, "top40_recovered_value": 511363.0, "top40_pct_of_recoverable": 0.5344}, "by_reason": [{"failure_reason": "network_error", "count": 194, "recovered_count": 159, "total_value": 237147.57, "recovery_rate": 0.8196, "recovered_value": 196233.79}, {"failure_reason": "bank_timeout", "count": 300, "recovered_count": 212, "total_value": 316288.35, "recovery_rate": 0.7067, "recovered_value": 230144.82}, {"failure_reason": "otp_failure", "count": 233, "recovered_count": 147, "total_value": 257490.09, "recovery_rate": 0.6309, "recovered_value": 162427.16}, {"failure_reason": "insufficient_funds", "count": 475, "recovered_count": 239, "total_value": 525566.93, "recovery_rate": 0.5032, "recovered_value": 278833.0}, {"failure_reason": "invalid_cvv", "count": 143, "recovered_count": 39, "total_value": 165821.18, "recovery_rate": 0.2727, "recovered_value": 51813.24}, {"failure_reason": "expired_card", "count": 178, "recovered_count": 29, "total_value": 192966.33, "recovery_rate": 0.1629, "recovered_value": 33821.82}, {"failure_reason": "fraud_block", "count": 77, "recovered_count": 6, "total_value": 86548.65, "recovery_rate": 0.0779, "recovered_value": 3692.98}], "lift_curve": [{"pct_worked": 0.0006, "pct_recovered_captured": 0.0001}, {"pct_worked": 0.0206, "pct_recovered_captured": 0.0372}, {"pct_worked": 0.0406, "pct_recovered_captured": 0.0811}, {"pct_worked": 0.0606, "pct_recovered_captured": 0.1108}, {"pct_worked": 0.0806, "pct_recovered_captured": 0.1383}, {"pct_worked": 0.1006, "pct_recovered_captured": 0.1582}, {"pct_worked": 0.1206, "pct_recovered_captured": 0.1852}, {"pct_worked": 0.1406, "pct_recovered_captured": 0.2114}, {"pct_worked": 0.1606, "pct_recovered_captured": 0.2321}, {"pct_worked": 0.1806, "pct_recovered_captured": 0.2569}, {"pct_worked": 0.2006, "pct_recovered_captured": 0.2731}, {"pct_worked": 0.2206, "pct_recovered_captured": 0.3}, {"pct_worked": 0.2406, "pct_recovered_captured": 0.3361}, {"pct_worked": 0.2606, "pct_recovered_captured": 0.3521}, {"pct_worked": 0.2806, "pct_recovered_captured": 0.3836}, {"pct_worked": 0.3006, "pct_recovered_captured": 0.4032}, {"pct_worked": 0.3206, "pct_recovered_captured": 0.4396}, {"pct_worked": 0.3406, "pct_recovered_captured": 0.4681}, {"pct_worked": 0.3606, "pct_recovered_captured": 0.4938}, {"pct_worked": 0.3806, "pct_recovered_captured": 0.5091}, {"pct_worked": 0.4006, "pct_recovered_captured": 0.5344}, {"pct_worked": 0.4206, "pct_recovered_captured": 0.5566}, {"pct_worked": 0.4406, "pct_recovered_captured": 0.581}, {"pct_worked": 0.4606, "pct_recovered_captured": 0.6017}, {"pct_worked": 0.4806, "pct_recovered_captured": 0.6211}, {"pct_worked": 0.5006, "pct_recovered_captured": 0.6599}, {"pct_worked": 0.5206, "pct_recovered_captured": 0.6847}, {"pct_worked": 0.5406, "pct_recovered_captured": 0.6942}, {"pct_worked": 0.5606, "pct_recovered_captured": 0.7117}, {"pct_worked": 0.5806, "pct_recovered_captured": 0.7311}, {"pct_worked": 0.6006, "pct_recovered_captured": 0.7524}, {"pct_worked": 0.6206, "pct_recovered_captured": 0.7662}, {"pct_worked": 0.6406, "pct_recovered_captured": 0.7854}, {"pct_worked": 0.6606, "pct_recovered_captured": 0.8007}, {"pct_worked": 0.6806, "pct_recovered_captured": 0.8332}, {"pct_worked": 0.7006, "pct_recovered_captured": 0.842}, {"pct_worked": 0.7206, "pct_recovered_captured": 0.8708}, {"pct_worked": 0.7406, "pct_recovered_captured": 0.8812}, {"pct_worked": 0.7606, "pct_recovered_captured": 0.8904}, {"pct_worked": 0.7806, "pct_recovered_captured": 0.9078}, {"pct_worked": 0.8006, "pct_recovered_captured": 0.9112}, {"pct_worked": 0.8206, "pct_recovered_captured": 0.922}, {"pct_worked": 0.8406, "pct_recovered_captured": 0.9467}, {"pct_worked": 0.8606, "pct_recovered_captured": 0.9513}, {"pct_worked": 0.8806, "pct_recovered_captured": 0.9523}, {"pct_worked": 0.9006, "pct_recovered_captured": 0.9579}, {"pct_worked": 0.9206, "pct_recovered_captured": 0.9732}, {"pct_worked": 0.9406, "pct_recovered_captured": 0.989}, {"pct_worked": 0.9606, "pct_recovered_captured": 0.9953}, {"pct_worked": 0.9806, "pct_recovered_captured": 0.9991}], "samples": [{"failure_reason": "network_error", "payment_method": "Debit Card", "bank": "IDFC", "amount_inr": 138.5, "recovery_score": 0.942, "actual_recovered": 1, "day_of_month": 22, "customer_past_failures": 2}, {"failure_reason": "network_error", "payment_method": "Credit Card", "bank": "Axis", "amount_inr": 687.02, "recovery_score": 0.939, "actual_recovered": 1, "day_of_month": 16, "customer_past_failures": 1}, {"failure_reason": "network_error", "payment_method": "Credit Card", "bank": "SBI", "amount_inr": 1646.97, "recovery_score": 0.933, "actual_recovered": 1, "day_of_month": 9, "customer_past_failures": 1}, {"failure_reason": "network_error", "payment_method": "Wallet", "bank": "PNB", "amount_inr": 31.03, "recovery_score": 0.925, "actual_recovered": 1, "day_of_month": 16, "customer_past_failures": 1}, {"failure_reason": "network_error", "payment_method": "UPI", "bank": "Axis", "amount_inr": 129.0, "recovery_score": 0.921, "actual_recovered": 0, "day_of_month": 21, "customer_past_failures": 1}, {"failure_reason": "network_error", "payment_method": "Credit Card", "bank": "Axis", "amount_inr": 122.78, "recovery_score": 0.921, "actual_recovered": 1, "day_of_month": 11, "customer_past_failures": 0}, {"failure_reason": "network_error", "payment_method": "Credit Card", "bank": "SBI", "amount_inr": 2456.61, "recovery_score": 0.921, "actual_recovered": 1, "day_of_month": 25, "customer_past_failures": 0}, {"failure_reason": "network_error", "payment_method": "Debit Card", "bank": "Axis", "amount_inr": 85.47, "recovery_score": 0.908, "actual_recovered": 1, "day_of_month": 31, "customer_past_failures": 2}, {"failure_reason": "expired_card", "payment_method": "UPI", "bank": "Yes Bank", "amount_inr": 1378.71, "recovery_score": 0.018, "actual_recovered": 0, "day_of_month": 16, "customer_past_failures": 4}, {"failure_reason": "expired_card", "payment_method": "Wallet", "bank": "HDFC", "amount_inr": 512.67, "recovery_score": 0.016, "actual_recovered": 0, "day_of_month": 21, "customer_past_failures": 4}, {"failure_reason": "expired_card", "payment_method": "Credit Card", "bank": "Axis", "amount_inr": 216.77, "recovery_score": 0.016, "actual_recovered": 0, "day_of_month": 4, "customer_past_failures": 3}, {"failure_reason": "expired_card", "payment_method": "Debit Card", "bank": "Kotak", "amount_inr": 1510.04, "recovery_score": 0.013, "actual_recovered": 0, "day_of_month": 28, "customer_past_failures": 3}]};
+
+// ---------- Hero ----------
+const s = DATA.summary;
+const fmtINR = n => '₹' + Math.round(n).toLocaleString('en-IN');
+
+document.getElementById('heroAmount').textContent = fmtINR(s.actual_recovered_value);
+document.getElementById('heroSub').innerHTML =
+  `<b>${s.actual_recovered_txns.toLocaleString('en-IN')}</b> of <b>${s.total_failed_txns.toLocaleString('en-IN')}</b> failed payments recovered — a <b>${(s.overall_recovery_rate*100).toFixed(0)}%</b> recovery rate`;
+
+document.getElementById('leakTotalLabel').textContent = fmtINR(s.total_failed_value) + ' total';
+const caughtPct = (s.actual_recovered_value / s.total_failed_value) * 100;
+const lostVal = s.total_failed_value - s.actual_recovered_value;
+
+setTimeout(() => {
+  document.getElementById('caughtBar').style.width = caughtPct + '%';
+  document.getElementById('caughtBar').textContent = caughtPct.toFixed(0) + '% caught';
+}, 150);
+document.getElementById('lostLabel').textContent = fmtINR(lostVal) + ' lost';
+
+// ---------- Reason bars ----------
+const reasonColors = { high: '#34D399', mid: '#60A5FA', low: '#FB7185' };
+function colorFor(rate){
+  if(rate >= 0.55) return reasonColors.high;
+  if(rate >= 0.30) return reasonColors.mid;
+  return reasonColors.low;
+}
+const reasonList = document.getElementById('reasonList');
+DATA.by_reason.forEach((r,i) => {
+  const row = document.createElement('div');
+  row.className = 'reason-row';
+  const col = colorFor(r.recovery_rate);
+  row.innerHTML = `
+    <div class="reason-top">
+      <span class="reason-name">${r.failure_reason.replace(/_/g,' ')}</span>
+      <span class="reason-stats"><span class="rate">${(r.recovery_rate*100).toFixed(0)}%</span> · ${fmtINR(r.recovered_value)} of ${fmtINR(r.total_value)}</span>
+    </div>
+    <div class="reason-track"><div class="reason-fill" style="background:${col}"></div></div>
+  `;
+  reasonList.appendChild(row);
+  setTimeout(() => {
+    row.querySelector('.reason-fill').style.width = (r.recovery_rate*100) + '%';
+  }, 150 + i*80);
+});
+
+// ---------- Lift chart (SVG) ----------
+const svg = document.getElementById('liftChart');
+const W = 300, H = 180, PAD = 24;
+const plotW = W - PAD*2, plotH = H - PAD*2;
+
+function pt(x, y){
+  return [PAD + x*plotW, PAD + (1-y)*plotH];
+}
+
+let pathD = '';
+DATA.lift_curve.forEach((p,i) => {
+  const [x,y] = pt(p.pct_worked, p.pct_recovered_captured);
+  pathD += (i===0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+});
+
+const [bx1,by1] = pt(0,0);
+const [bx2,by2] = pt(1,1);
+
+// find the 40% callout point
+const target = DATA.lift_curve.reduce((a,b) => Math.abs(b.pct_worked-0.4) < Math.abs(a.pct_worked-0.4) ? b : a);
+const [tx,ty] = pt(target.pct_worked, target.pct_recovered_captured);
+
+svg.innerHTML = `
+  <defs>
+    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34D399" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#34D399" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <line x1="${PAD}" y1="${PAD}" x2="${PAD}" y2="${H-PAD}" stroke="#232E4A" stroke-width="1"/>
+  <line x1="${PAD}" y1="${H-PAD}" x2="${W-PAD}" y2="${H-PAD}" stroke="#232E4A" stroke-width="1"/>
+  <line x1="${bx1}" y1="${by1}" x2="${bx2}" y2="${by2}" stroke="#5C6584" stroke-width="1.2" stroke-dasharray="3,3"/>
+  <path d="${pathD} L${bx2},${by1} L${bx1},${by1} Z" fill="url(#areaGrad)"/>
+  <path d="${pathD}" fill="none" stroke="#34D399" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="${tx}" y1="${by1}" x2="${tx}" y2="${ty}" stroke="#34D399" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+  <circle cx="${tx}" cy="${ty}" r="4" fill="#0A0F1D" stroke="#34D399" stroke-width="2"/>
+  <text x="${PAD}" y="${H-8}" fill="#5C6584" font-size="8" font-family="JetBrains Mono">0%</text>
+  <text x="${W-PAD-24}" y="${H-8}" fill="#5C6584" font-size="8" font-family="JetBrains Mono">worked 100%</text>
+  <text x="${PAD-2}" y="${PAD-6}" fill="#5C6584" font-size="8" font-family="JetBrains Mono" text-anchor="start">recovered 100%</text>
+`;
+
+const callout = document.createElement('div');
+callout.className = 'lift-callout';
+callout.style.left = ((tx/W)*100) + '%';
+callout.style.top = ((ty/H)*100 - 14) + '%';
+callout.textContent = `work ${(target.pct_worked*100).toFixed(0)}% → capture ${(target.pct_recovered_captured*100).toFixed(0)}%`;
+document.querySelector('.lift-svg-wrap').appendChild(callout);
+
+// ---------- Ledger ----------
+const ledger = document.getElementById('ledger');
+DATA.samples.forEach(txn => {
+  const row = document.createElement('div');
+  row.className = 'ledger-row';
+  row.innerHTML = `
+    <div>
+      <span class="ledger-reason">${txn.failure_reason.replace(/_/g,' ')}</span>
+      <span class="ledger-sub">${txn.payment_method} · ${txn.bank}</span>
+    </div>
+    <div class="ledger-amount">₹${txn.amount_inr.toLocaleString('en-IN')}</div>
+    <div class="ledger-score">${(txn.recovery_score*100).toFixed(0)}%</div>
+    <div class="ledger-outcome ${txn.actual_recovered ? 'out-yes' : 'out-no'}">${txn.actual_recovered ? '✓' : '✗'}</div>
+  `;
+  ledger.appendChild(row);
+});
+</script>
+</body>
+</html>
